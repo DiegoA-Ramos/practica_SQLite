@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../models/tarea.dart';
+import '../data/database.dart';
 
-// Pantalla base SIN persistencia ni operaciones CRUD implementadas.
-// Conserva las indicaciones TODO para orientar tu trabajo.
 class TareasPage extends StatefulWidget {
-  const TareasPage({super.key});
+  const TareasPage({super.key, required this.db});
+
+  final AppDatabase db;
 
   @override
   State<TareasPage> createState() => _TareasPageState();
@@ -18,11 +18,27 @@ class _TareasPageState extends State<TareasPage> {
   @override
   void initState() {
     super.initState();
-
+    _cargar();
   }
 
-  void _agregarTarea() {
-    _pendiente('Implementar registro de tarea');
+  Future<void> _cargar() async {
+    try {
+      final lista = await widget.db.listar();
+      if (!mounted) return;
+      setState(() => _tareas = lista);
+    } catch (e) {
+      _pendiente('No se pudieron cargar las tareas: $e');
+    }
+  }
+
+  Future<void> _agregarTarea() async {
+    try {
+      await widget.db.agregar(_tituloController.text);
+      _tituloController.clear();
+      await _cargar();
+    } catch (e) {
+      _pendiente('Error al guardar: $e');
+    }
   }
 
   void _alternarCompletada(Tarea tarea, bool completada) {
