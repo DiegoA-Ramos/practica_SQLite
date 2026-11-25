@@ -31,29 +31,59 @@ class _TareasPageState extends State<TareasPage> {
     }
   }
 
-  Future<void> _agregarTarea() async {
+  // Ejecuta una escritura, recarga la lista y muestra errores comprensibles
+  Future<void> _ejecutar(Future<void> Function() accion) async {
     try {
-      await widget.db.agregar(_tituloController.text);
-      _tituloController.clear();
+      await accion();
       await _cargar();
+    } on FormatException catch (e) {
+      _pendiente(e.message);
     } catch (e) {
-      _pendiente('Error al guardar: $e');
+      _pendiente('Error de almacenamiento: $e');
     }
   }
 
-  void _alternarCompletada(Tarea tarea, bool completada) {
-    _pendiente('Implementar actualización de tarea');
+  void _agregarTarea() => _ejecutar(() async {
+        await widget.db.agregar(_tituloController.text);
+        _tituloController.clear();
+      });
+
+  void _alternarCompletada(Tarea tarea, bool completada) =>
+      _ejecutar(() => widget.db.cambiarEstado(tarea.id, completada));
+
+  Future<void> _editarTarea(Tarea tarea) async {
+    var texto = tarea.titulo;
+    final nuevo = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Editar título'),
+        content: TextFormField(
+          initialValue: tarea.titulo,
+          autofocus: true,
+          onChanged: (v) => texto = v,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, texto),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+    if (nuevo != null) {
+      await _ejecutar(() => widget.db.editarTitulo(tarea.id, nuevo));
+    }
   }
 
-  void _editarTarea(Tarea tarea) {
-    _pendiente('Implementar edición de título');
-  }
-
-  void _eliminarTarea(Tarea tarea) {
-    _pendiente('Implementar eliminación de tarea');
-  }
+  void _eliminarTarea(Tarea tarea) =>
+      _ejecutar(() => widget.db.eliminar(tarea.id));
 
   void _pendiente(String mensaje) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(mensaje)),
     );

@@ -11,8 +11,8 @@ App en Flutter para agregar, listar, editar, completar y eliminar tareas, guarda
 |---|---|---|
 | 1 | Preparación y diseño de la tabla | Hecha |
 | 2 | Crear y consultar con persistencia real | Hecha |
-| 3 | Editar, cambiar estado, eliminar y validar | Pendiente |
-| 4 | Web, pruebas y documentación | Pendiente |
+| 3 | Editar, cambiar estado, eliminar y validar | Hecha |
+| 4 | Web, pruebas y documentación | En proceso (web configurada, falta nativo y pruebas automatizadas) |
 
 ## Persistencia: Drift + drift_flutter
 
@@ -66,9 +66,9 @@ En web los datos dependen del origen (`localhost:8080`): si cambia el puerto par
 
 | Entorno | Plataforma | Resultado |
 |---|---|---|
+| Web | Edge/Chrome, localhost:8080 | Funciona, los datos persisten |
+| Escritorio | pendiente | pendiente |
 | Móvil | pendiente | pendiente |
-| Escritorio | Windows 11 | Funciona, los datos persisten al cerrar y abrir |
-| Web | pendiente | pendiente |
 
 Lo que no pruebe lo marcaré como "solo previsto".
 
@@ -76,12 +76,18 @@ Lo que no pruebe lo marcaré como "solo previsto".
 
 | ID | Acción | Esperado | Obtenido |
 |---|---|---|---|
-| P1 | Agregar 3 tareas, cerrar la app y abrirla | Permanecen las 3 | Permanecen las 3 (Windows) |
-| P2 | Completar una y reiniciar | Se conserva el estado | pendiente |
-| P3 | Cambiar un título y reiniciar | Aparece el nuevo | pendiente |
-| P4 | Eliminar una y reiniciar | No reaparece | pendiente |
-| P5 | Agregar título vacío | No se registra | pendiente |
-| P6 | Web: recargar y cerrar/abrir pestaña | Los datos permanecen | pendiente |
+| P1 | Agregar 3 tareas, recargar | Permanecen las 3 | Web: permanecen las 3 tras recargar |
+| P2 | Completar una y reiniciar | Se conserva el estado | Web: la tarea sigue completada tras recargar |
+| P3 | Cambiar un título y reiniciar | Aparece el nuevo | Web: el nuevo título permanece tras recargar |
+| P4 | Eliminar una y reiniciar | No reaparece | Web: no reaparece tras recargar |
+| P5 | Agregar título vacío | No se registra | Web: con el campo vacío y con solo espacios no se agrega |
+| P6 | Web: recargar y cerrar/abrir pestaña | Los datos permanecen | Web: permanecen al abrir otra pestaña en localhost:8080 y al detener `flutter run` con `q` y volver a ejecutarlo |
+
+Todas las pruebas manuales se hicieron en web. Falta repetirlas en una plataforma nativa.
+
+## Problema encontrado en web
+
+Al agregar la primera tarea en web salía "Failed to execute 'compile' on 'WebAssembly': Incorrect response MIME type. Expected 'application/wasm'". La causa era que `sqlite3.wasm` y el worker de Drift no estaban en `web/`: el servidor de Flutter devolvía `index.html` en su lugar, y el navegador no podía compilarlo como WebAssembly. Lo resolví descargando los dos archivos de los releases de `sqlite3.dart` y `drift`, copiándolos a `web/` y verificando que coincidieran con el nombre del código.
 
 ## Decisiones
 
